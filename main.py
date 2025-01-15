@@ -14,9 +14,10 @@ import re
 
 def initialize_driver(season: str='2023-24'):
 
-    if season != ['2024-25', '2023-24', '2022-23', '2021-22', '2020-21', '2019-20', '2018-19', '2017-18', 
-                  '2016-17', '2015-16']:
-        raise Exception("Not available video-data for this season")
+    if season not in ['2024-25', '2023-24', '2022-23', '2021-22', '2020-21', '2019-20',  
+                      '2018-19', '2017-18', '2016-17', '2015-16', '2014-15']:
+        
+        raise Exception("Video-data not available for this season")
 
     # Initialize the Chrome driver
     driver = webdriver.Chrome()
