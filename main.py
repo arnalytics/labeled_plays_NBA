@@ -108,7 +108,7 @@ def create_dataframe(df_type: str = 'FGA'):
     
     df_type: str
         Tipo de estadística para determinar las columnas del DataFrame. 
-        Ejemplo: ['FGA', 'REB', 'BLK']
+        Ejemplo: ['FGA', 'OREB', 'DREB, 'BLK']
     """
 
     # Diccionario con las columnas por tipo
@@ -117,8 +117,11 @@ def create_dataframe(df_type: str = 'FGA'):
             ' ', 'PLAYER', 'PLAY TYPE', 'MADE', 'SHOT TYPE', 'BOXSCORE', 'VTM', 'HTM', 'GAME DATE',
             'PERIOD', 'TIME REMAINING', 'SHOT DISTANCE (FT)', 'TEAM', 'AST', 'Assisted by', 'Video Link'
         ],
-        'REB': [
-            ' ', 'PLAYER', 'REBOUND TYPE', 'BOXSCORE', 'VTM', 'HTM', 'GAME DATE', 'PERIOD', 'Video Link'
+        'OREB': [
+            ' ', 'PLAYER', 'PLAY DESCRIPTION', 'REBOUND TYPE', 'BOXSCORE', 'VTM', 'HTM', 'GAME DATE', 'PERIOD', 'Video Link'
+        ],
+        'DREB': [
+            ' ', 'PLAYER', 'PLAY DESCRIPTION', 'REBOUND TYPE', 'BOXSCORE', 'VTM', 'HTM', 'GAME DATE', 'PERIOD', 'Video Link'
         ],
         'BLK': [
             ' ', 'PLAYER', 'BOXSCORE', 'VTM', 'HTM', 'GAME DATE', 'PERIOD', 'Video Link'
