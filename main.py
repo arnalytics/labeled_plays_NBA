@@ -124,7 +124,7 @@ def create_dataframe(df_type: str = 'FGA'):
             ' ', 'PLAYER', 'PLAY DESCRIPTION', 'REBOUND TYPE', 'BOXSCORE', 'VTM', 'HTM', 'GAME DATE', 'PERIOD', 'Video Link'
         ],
         'BLK': [
-            ' ', 'PLAYER', 'BOXSCORE', 'VTM', 'HTM', 'GAME DATE', 'PERIOD', 'Video Link'
+            ' ', 'PLAYER', 'PLAY DESCRIPTION', 'BOXSCORE', 'VTM', 'HTM', 'GAME DATE', 'PERIOD', 'Video Link'
         ],
         'STL/TOV': [
             ' ', 'PLAYER', 'BOXSCORE', 'VTM', 'HTM', 'GAME DATE', 'PERIOD', 'Video Link'
