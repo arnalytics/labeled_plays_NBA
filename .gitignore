@@ -1,5 +1,8 @@
-# Dataset folder
+# Local stuff
 holy_grail/
+example_video.mp4
+yolov5s.pt
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
