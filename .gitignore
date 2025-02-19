@@ -1,7 +1,6 @@
 # Local stuff
 holy_grail/videos
-example_video.mp4
-yolov5s.pt
+ignore
 
 
 # Byte-compiled / optimized / DLL files
