@@ -8,6 +8,7 @@ import re
 from tqdm import tqdm
 
 import concurrent.futures
+from selenium.webdriver.chrome.options import Options
 
 ###################################################################################################
 '''
@@ -128,20 +129,20 @@ def create_dataframe(df_type: str = 'FGA'):
     # Diccionario con las columnas por tipo
     columns_by_type = {
         'FGA': [
-            ' ', 'PLAYER', 'PLAY TYPE', 'MADE', 'SHOT TYPE', 'BOXSCORE', 'VTM', 'HTM', 'GAME DATE',
+            'SEASON', 'PLAYER ID', 'PLAYER', 'PLAY TYPE', 'MADE', 'SHOT TYPE', 'BOXSCORE', 'VTM', 'HTM', 'GAME DATE',
             'PERIOD', 'TIME REMAINING', 'SHOT DISTANCE (FT)', 'TEAM', 'AST', 'Assisted by', 'Video Link'
         ],
         'OREB': [
-            ' ', 'PLAYER', 'PLAY DESCRIPTION', 'REBOUND TYPE', 'BOXSCORE', 'VTM', 'HTM', 'GAME DATE', 'PERIOD', 'Video Link'
+            'SEASON', 'PLAYER ID', 'PLAYER NAME', 'REBOUND TYPE', 'PLAY DESCRIPTION', 'BOXSCORE', 'VTM', 'HTM', 'GAME DATE', 'PERIOD', 'Video Link'
         ],
         'DREB': [
-            ' ', 'PLAYER', 'PLAY DESCRIPTION', 'REBOUND TYPE', 'BOXSCORE', 'VTM', 'HTM', 'GAME DATE', 'PERIOD', 'Video Link'
+            'SEASON', 'PLAYER ID', 'PLAYER NAME', 'REBOUND TYPE', 'PLAY DESCRIPTION', 'BOXSCORE', 'VTM', 'HTM', 'GAME DATE', 'PERIOD', 'Video Link'
         ],
         'BLK': [
-            ' ', 'PLAYER', 'PLAY DESCRIPTION', 'BOXSCORE', 'VTM', 'HTM', 'GAME DATE', 'PERIOD', 'Video Link'
+            'SEASON', 'PLAYER ID', 'PLAYER', 'PLAY DESCRIPTION', 'BOXSCORE', 'VTM', 'HTM', 'GAME DATE', 'PERIOD', 'Video Link'
         ],
         'STL/TOV': [
-            ' ', 'PLAYER', 'BOXSCORE', 'VTM', 'HTM', 'GAME DATE', 'PERIOD', 'Video Link'
+            'SEASON', 'PLAYER ID', 'PLAYER', 'BOXSCORE', 'VTM', 'HTM', 'GAME DATE', 'PERIOD', 'Video Link'
         ]
     }
 
@@ -157,8 +158,9 @@ def initialize_df(play_type: str, season: str):
     try: # If the dataframe already exists, read it
         labels_df = pd.read_csv(df_path)
 
-    except:  # If the dataframe doesn't exist, create an empty one
+    except:  # If the dataframe doesn't exist, create an empty one w/ the headers
         labels_df = create_dataframe(play_type)
+        labels_df.to_csv(df_path, mode='w', index=False, header=True)
 
     return labels_df, df_path
 
@@ -220,6 +222,7 @@ def scrape_rebounds(season: str, play_type: str):
         # Nombre del jugador
         xpath_player_name = f'//*[@id="__next"]/div[2]/div[2]/div[3]/section[2]/div/div[2]/div[3]/table/tbody/tr[{i}]/td[2]/a'
         player_name = driver.find_element(By.XPATH, xpath_player_name).text
+        player_id = i
     
         # Clicar en la columna correspondiente al tipo de jugada
         link_xpath = general_players_table_xpath + f'tbody/tr[{i}]/td[{play_type_indices[play_type]}]/a'
@@ -250,7 +253,9 @@ def scrape_rebounds(season: str, play_type: str):
             columns_play = play.find_elements(By.XPATH, line_play)
             
             row_data = [col.text for col in columns_play]
-            row_data.insert(1, player_name)
+            row_data[0] = season
+            row_data.insert(1, player_id)
+            row_data.insert(2, player_name)
             row_data.insert(3, play_type)
     
             play.click()
@@ -290,13 +295,31 @@ def scrape_shots(season: str, play_type: str):
 '''
 ###################################################################################################
 
+
 if __name__ == '__main__':
     
-    # Lista de temporadas que deseas scrappear
-    seasons = ["2023-24", "2022-23", "2021-22", "2020-21", "2019-20"]# "2018-19", "2017-18", "2016-17", "2015-16", "2014-15"]
-    play_types = ["OREB"] * len(seasons)
+    # Lista de temporadas
+    all_seasons = ["2014-15", "2015-16", "2016-17", "2017-18", "2018-19", 
+                   "2019-20", "2020-21", "2021-22", "2022-23", "2023-24"]
     
-    # Usando ProcessPoolExecutor para lanzar procesos paralelos
-    with concurrent.futures.ProcessPoolExecutor() as executor:
-        executor.map(scrape_rebounds, seasons, play_types)
+    # Dividir en dos grupos
+    batch_size = 1
+    first_batch = all_seasons[:batch_size]
+    second_batch = all_seasons[10-batch_size:]
+    play_types1 = ["OREB"] * batch_size
+    play_types2 = ["OREB"] * (10-batch_size)
+    
+    # Ejecutar el primer lote
+    try:
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            executor.map(scrape_rebounds, first_batch, play_types1)
+    except Exception as e:
+        print(f"Error en el primer lote: {e}")
+    
+    # # Ejecutar el segundo lote
+    # try:
+    #     with concurrent.futures.ProcessPoolExecutor() as executor:
+    #         executor.map(scrape_rebounds, second_batch, play_types2)
+    # except Exception as e:
+    #     print(f"Error en el segundo lote: {e}")
 
