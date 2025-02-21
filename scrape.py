@@ -102,6 +102,18 @@ def interact_w_dropdown(xpath: str, option_value: str, driver):
         print("Something went wrong :(((")
 
 
+def get_last_player_id(df: pd.DataFrame) -> int:
+    """
+    Get the player id of the last player scraped, so the scraper knows where it left it.
+    """
+    try:
+        last_id = df['PLAYER ID'].iloc[-1]
+
+        return int(last_id)
+    except: 
+        return 0
+    
+
 def extract_assist_info(play_description: str):
     # Patrón para capturar el nombre del jugador sin el número antes de "AST"
     pattern = r"\(([^0-9()]+) \d+ AST\)"
@@ -208,7 +220,9 @@ def scrape_rebounds(season: str, play_type: str):
     labels_df, df_path = initialize_df(play_type, season)
     number = find_number_of_players(driver)
     
-    for i in tqdm(range(1, number + 1), desc=f"{season} - Procesando jugadores"):
+    last_id = get_last_player_id(labels_df)
+
+    for i in tqdm(range(last_id + 1, number + 1), desc=f"{season} - Procesando jugadores"):
         # Resetear el dataframe para cada jugador
         labels_df = labels_df.iloc[0:0]
         
@@ -301,25 +315,22 @@ if __name__ == '__main__':
     # Lista de temporadas
     all_seasons = ["2014-15", "2015-16", "2016-17", "2017-18", "2018-19", 
                    "2019-20", "2020-21", "2021-22", "2022-23", "2023-24"]
-    
-    # Dividir en dos grupos
-    batch_size = 1
-    first_batch = all_seasons[:batch_size]
-    second_batch = all_seasons[10-batch_size:]
-    play_types1 = ["OREB"] * batch_size
-    play_types2 = ["OREB"] * (10-batch_size)
-    
-    # Ejecutar el primer lote
-    try:
-        with concurrent.futures.ProcessPoolExecutor() as executor:
-            executor.map(scrape_rebounds, first_batch, play_types1)
-    except Exception as e:
-        print(f"Error en el primer lote: {e}")
-    
-    # # Ejecutar el segundo lote
-    # try:
-    #     with concurrent.futures.ProcessPoolExecutor() as executor:
-    #         executor.map(scrape_rebounds, second_batch, play_types2)
-    # except Exception as e:
-    #     print(f"Error en el segundo lote: {e}")
+
+    # Lista de tipos de jugadas
+    play_types = ["DREB", "OREB"]
+
+    for play_type in play_types:  # Ejecuta dos loops, uno para cada tipo de jugada
+        print(f"Iniciando scraping para {play_type}...\n")
+        
+        for season in all_seasons:
+            try:
+                print(f"Iniciando scraping para {play_type} en la temporada {season}...")
+                scrape_rebounds(season, play_type)
+                print(f"craping completado para {play_type} en {season}.\n")
+            except Exception as e:
+                print(f"Error en {play_type}, temporada {season}: {e}. Pasando a la siguiente...\n")
+
+        print(f"Scraping finalizado para {play_type}.\n")
+
+    print("Proceso finalizado para todos los tipos de jugadas y temporadas.")
 
