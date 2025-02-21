@@ -88,7 +88,7 @@ def concatenate_playtype_seasons(play_type: str, seasons: Union[str, List[str]],
 
     # Get files in th folder
     folder_path = "holy_grail/labels/"
-    
+
     all_files = os.listdir(folder_path)
     
     # Filtrar archivos que coincidan con el formato esperado
@@ -128,7 +128,6 @@ def concatenate_playtype_seasons(play_type: str, seasons: Union[str, List[str]],
     else:
         print("No se encontraron archivos para las temporadas indicadas.")
         return pd.DataFrame()  # Retorna un DataFrame vacío si no hay archivos
-
 
 
 def clean_missing_video_data(df: pd.DataFrame) -> pd.DataFrame:

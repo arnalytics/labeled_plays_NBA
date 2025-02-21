@@ -1,5 +1,6 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
 import time
@@ -7,8 +8,6 @@ import pandas as pd
 import re
 from tqdm import tqdm
 
-import concurrent.futures
-from selenium.webdriver.chrome.options import Options
 
 ###################################################################################################
 '''
@@ -99,7 +98,7 @@ def interact_w_dropdown(xpath: str, option_value: str, driver):
         select = Select(dropdown_element)
         select.select_by_value(option_value)
     except:
-        print("Something went wrong :(((")
+        pass
 
 
 def get_last_player_id(df: pd.DataFrame) -> int:
@@ -275,10 +274,13 @@ def scrape_rebounds(season: str, play_type: str):
             play.click()
     
             # Obtener el video
-            video_element = WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, video_display_xpath))
-            )
-            video_src = video_element.get_attribute('src')
+            try:
+                video_src = WebDriverWait(driver, 3).until(
+                    lambda d: d.find_element(By.XPATH, video_display_xpath).get_attribute('src') or None
+                )
+            except TimeoutException:
+                video_src = ""  # Si no se encuentra, asignar vacío para evitar errores
+
             row_data.append(video_src)
     
             # Agregar la fila al DataFrame
@@ -313,8 +315,10 @@ def scrape_shots(season: str, play_type: str):
 if __name__ == '__main__':
     
     # Lista de temporadas
-    all_seasons = ["2014-15", "2015-16", "2016-17", "2017-18", "2018-19", 
-                   "2019-20", "2020-21", "2021-22", "2022-23", "2023-24"]
+    # all_seasons = ["2014-15", "2015-16", "2016-17", "2017-18", "2018-19", 
+    #                "2019-20", "2020-21", "2021-22", "2022-23", "2023-24"]
+
+    all_seasons = ["2019-20", "2020-21"]
 
     # Lista de tipos de jugadas
     play_types = ["DREB", "OREB"]
