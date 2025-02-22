@@ -130,13 +130,45 @@ def concatenate_playtype_seasons(play_type: str, seasons: Union[str, List[str]],
         return pd.DataFrame()  # Retorna un DataFrame vacío si no hay archivos
 
 
-def clean_missing_video_data(df: pd.DataFrame) -> pd.DataFrame:
+def clean_missing_video_data(filename: str, overwrite: bool = False) -> None:
     """
-    Elimina las filas que tienen el vídeo missing o un valor vacío en la columna 'Video Link'.
+    Lee un archivo CSV, elimina las filas con el video faltante o valores vacíos en la columna 'Video Link',
+    y guarda el resultado en la misma carpeta, ya sea sobrescribiendo el archivo original o creando uno nuevo.
+
+    :param filename: Nombre del archivo CSV (sin ruta).
+    :param overwrite: Si es True, sobrescribe el archivo original. Si es False, guarda el resultado con "_cleaned" agregado al nombre.
     """
-    # Filtrar filas donde 'Video Link' NO sea la URL de video faltante y tampoco esté vacío o NaN
-    df_cleaned = df[(df['Video Link'] != 'https://videos.nba.com/nba/static/missing.mp4') & 
-                    df['Video Link'].notna() & 
-                    (df['Video Link'] != '')]
-    
-    return df_cleaned
+    try:
+        # Definir el path donde se encuentran los archivos
+        base_path = "holy_grail/labels/"  # Cambia esto según la ubicación real de tus archivos
+        file_path = os.path.join(base_path, filename)
+
+        # Verificar si el archivo existe
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"El archivo {file_path} no existe.")
+
+        # Leer el archivo CSV
+        df = pd.read_csv(file_path)
+
+        # Verificar si la columna 'Video Link' existe en el DataFrame
+        if 'Video Link' not in df.columns:
+            raise ValueError("El archivo CSV no contiene la columna 'Video Link'.")
+
+        # Filtrar las filas donde 'Video Link' no sea el video faltante, vacío o NaN
+        df_cleaned = df[(df['Video Link'] != 'https://videos.nba.com/nba/static/missing.mp4') & 
+                        df['Video Link'].notna() & 
+                        (df['Video Link'] != '')]
+
+        # Determinar la ruta de salida según overwrite
+        if overwrite:
+            output_file = file_path  # Sobrescribe el archivo original
+        else:
+            output_file = os.path.join(base_path, filename.replace(".csv", "_cleaned.csv"))  # Crea un nuevo archivo
+
+        # Guardar el archivo limpio
+        df_cleaned.to_csv(output_file, index=False)
+        print(f"Archivo limpio guardado en: {output_file}")
+
+    except Exception as e:
+        print(f"Error al procesar el archivo: {e}")
+

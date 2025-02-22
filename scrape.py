@@ -239,9 +239,14 @@ def scrape_rebounds(season: str, play_type: str):
     
         # Clicar en la columna correspondiente al tipo de jugada
         link_xpath = general_players_table_xpath + f'tbody/tr[{i}]/td[{play_type_indices[play_type]}]/a'
-        link_element = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.XPATH, link_xpath))
-        )
+        
+        try:
+            link_element = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.XPATH, link_xpath))
+            )
+        except:  # En caso de que no haya link a las jugadas, pasar al siguiente jugador
+            continue
+
         link_url = link_element.get_attribute("href")
         driver.get(link_url)
     
@@ -316,7 +321,7 @@ if __name__ == '__main__':
     all_seasons = ["2017-18", "2019-20", "2020-21", "2014-15", "2015-16", 
                    "2016-17", "2018-19", "2021-22", "2022-23", "2023-24"]
 
-    play_types = ["OREB", "DREB"]
+    play_types = ["OREB"]
 
     max_iterations = 10  # Máximo de ejecuciones
     iteration_count = 0  # Contador de ejecuciones
