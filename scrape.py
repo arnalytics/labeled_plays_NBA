@@ -313,28 +313,35 @@ def scrape_shots(season: str, play_type: str):
 
 
 if __name__ == '__main__':
-    
-    # Lista de temporadas
-    # all_seasons = ["2014-15", "2015-16", "2016-17", "2017-18", "2018-19", 
-    #                "2019-20", "2020-21", "2021-22", "2022-23", "2023-24"]
+    all_seasons = ["2017-18", "2019-20", "2020-21", "2014-15", "2015-16", 
+                   "2016-17", "2018-19", "2021-22", "2022-23", "2023-24"]
 
-    all_seasons = ["2019-20", "2020-21"]
+    play_types = ["OREB", "DREB"]
 
-    # Lista de tipos de jugadas
-    play_types = ["DREB", "OREB"]
+    max_iterations = 10  # Máximo de ejecuciones
+    iteration_count = 0  # Contador de ejecuciones
 
-    for play_type in play_types:  # Ejecuta dos loops, uno para cada tipo de jugada
-        print(f"Iniciando scraping para {play_type}...\n")
+    while iteration_count < max_iterations:  # Ejecuta hasta un máximo de 10 veces
+        for play_type in play_types:
+            print(f"Iniciando scraping para {play_type}...\n")
+            
+            for season in all_seasons:
+                try:
+                    print(f"Iniciando scraping para {play_type} en la temporada {season}...")
+                    scrape_rebounds(season, play_type)
+                    print(f"Scraping completado para {play_type} en {season}.\n")
+                except Exception as e:
+                    print(f"Error en {play_type}, temporada {season}: {e}. Pasando a la siguiente...\n")
+
+            print(f"Scraping finalizado para {play_type}.\n")
+
+        print("Proceso finalizado para todos los tipos de jugadas y temporadas.")
         
-        for season in all_seasons:
-            try:
-                print(f"Iniciando scraping para {play_type} en la temporada {season}...")
-                scrape_rebounds(season, play_type)
-                print(f"craping completado para {play_type} en {season}.\n")
-            except Exception as e:
-                print(f"Error en {play_type}, temporada {season}: {e}. Pasando a la siguiente...\n")
+        iteration_count += 1  # Incrementa el contador de iteraciones
+        if iteration_count < max_iterations:  # Solo espera si no ha alcanzado el máximo
+            print("Esperando 5 minutos antes de reiniciar...\n")
+            time.sleep(600)  # Espera 10 minutos
 
-        print(f"Scraping finalizado para {play_type}.\n")
+    print("Se ha alcanzado el máximo de ejecuciones. El proceso se detendrá.")
 
-    print("Proceso finalizado para todos los tipos de jugadas y temporadas.")
 
