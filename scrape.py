@@ -258,9 +258,12 @@ def scrape_rebounds(season: str, play_type: str):
             '-1', 
             driver
         )
-    
+        
         rows_number = count_rows_table(driver, table_xpath='//*[@id="__next"]/div[2]/div[2]/div[3]/section/div/div/div[3]/table/tbody')
-    
+        
+        if rows_number is None:
+            continue
+
         for j in range(1, rows_number+1): 
             line_play = f'//*[@id="__next"]/div[2]/div[2]/div[3]/section/div/div/div[3]/table/tbody/tr[{j}]/td'
     
@@ -302,12 +305,190 @@ def scrape_rebounds(season: str, play_type: str):
 
 
 def scrape_shots(season: str, play_type: str):
-    # TODO
+    # TODO: S'ha d'implementar bé encara, aquest ocodi és el que hi havia al notebook tal qual.
+    
+    """
+    Scrape labels for FGA: Includes info of FGM (2p & 3p) and AST.
+    """
 
-    season = -1
-    play_type = -1
+    driver = initialize_driver(season="2023-24")
 
-    return season + play_type
+    general_players_table_xpath = '//*[@id="__next"]/div[2]/div[2]/div[3]/section[2]/div/div[2]/div[3]/table/'
+
+    # Create the empty dataframe for the labels, depending on the type of play
+    play_type_indices = {"FGA": 11, "REB": 21, "TOV": 23, "STL": 24, "BLK": 25}
+    play_type = 'FGA'
+
+    df_path = '/Users/arnaubarrera/Desktop/MSc Computer Vision/TFM/labeled_plays_NBA/holy_grail/FGA_labels.csv'
+    labels_df = pd.read_csv(df_path)
+
+    for i in range(25, 100):  # Iterate over the list of players
+
+        # Clicar en cierta columna (tipo de jugada) de un jugador en concreto
+        try:
+
+            link_xpath = general_players_table_xpath + f'tbody/tr[{i}]/td[{play_type_indices[play_type]}]/a'
+            link_element = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.XPATH, link_xpath))
+            )
+
+            link_url = link_element.get_attribute("href")
+            driver.get(link_url)
+
+        except Exception as e:
+            print(f"Error: {e}")
+
+        video_display_xpath = '//*[@id="vjs_video_3_html5_api"]'
+
+        # Load all the rows in one page before iterating
+        dropdown_xpath = '//*[@class="DropDown_select__4pIg9"]'
+        option_value = '-1'
+
+        dropdown_element = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, dropdown_xpath))
+        )
+        select = Select(dropdown_element)
+        select.select_by_value(option_value)
+
+        rows_number = count_rows_table(driver, table_xpath='//*[@id="__next"]/div[2]/div[2]/div[3]/section/div/div/div[3]/table/tbody')
+
+        for i in range(1, rows_number):  # Iterate over all the plays of a particular player
+            line_play = f'//*[@id="__next"]/div[2]/div[2]/div[3]/section/div/div/div[3]/table/tbody/tr[{i}]/td'
+
+            play = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.XPATH, line_play))
+            )
+
+            columns_play = play.find_elements(By.XPATH, line_play)
+            
+            row_data = []
+            for col in columns_play:
+                row_data.append(col.text)
+            
+            play.click()
+
+            # Verify if the shot is assisted
+            ast_xpath = '//*[@id="__next"]/div[2]/div[2]/div[3]/section/div/main/section[1]/div/div[2]/h2'
+
+            ast_element = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, ast_xpath))
+            )
+
+            ast_present, assisted_by = extract_assist_info(ast_element.text)
+            row_data.extend([ast_present, assisted_by])
+
+            # Video display element
+            video_element = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, video_display_xpath))
+            )
+            video_src = video_element.get_attribute('src')
+            row_data.append(video_src) 
+
+            # La fila se agrega al DataFrame
+            labels_df.loc[i - 1] = row_data  
+        
+        # Actualizar el csv con los nuevos datos
+        labels_df.to_csv(df_path, mode='a', index=True, header=False)
+
+        # Cuando se ha guardado, click en la flecha de ir para atrás
+        driver.back()
+        time.sleep(2)
+
+
+    driver.quit()   
+
+
+
+def scrape_blocks(season: str, play_type: str):
+    # TODO: S'ha d'implementar bé encara, aquest ocodi és el que hi havia al notebook tal qual.
+
+    """
+    Scrape BLOCKS
+    """
+
+    season = "2023-24"
+    play_type = "BLK"
+
+    driver = initialize_driver(season=season)
+
+    general_players_table_xpath = '//*[@id="__next"]/div[2]/div[2]/div[3]/section[2]/div/div[2]/div[3]/table/'
+
+    # Create the empty dataframe for the labels, depending on the type of play
+    play_type_indices = {"FGA": 11, "OREB": 19, "DREB": 20, "REB": 21, "TOV": 23, "STL": 24, "BLK": 25}
+
+    labels_df = create_dataframe(play_type)
+    df_path = f'/Users/arnaubarrera/Desktop/MSc Computer Vision/TFM/labeled_plays_NBA/holy_grail/labels/{play_type}_labels.csv'
+    labels_df.to_csv(df_path, mode='w', index=True, header=True)
+
+    for i in range(1, 100):  # Iterate over the list of players
+
+        # Player name
+        xpath_player_name = f'//*[@id="__next"]/div[2]/div[2]/div[3]/section[2]/div/div[2]/div[3]/table/tbody/tr[{i}]/td[2]/a'
+        player_name = driver.find_element(By.XPATH, xpath_player_name).text
+
+        # Clicar en cierta columna (tipo de jugada) de un jugador en concreto
+        link_xpath = general_players_table_xpath + f'tbody/tr[{i}]/td[{play_type_indices[play_type]}]/a'
+        link_element = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, link_xpath))
+        )
+
+        link_url = link_element.get_attribute("href")
+        driver.get(link_url)
+
+        video_display_xpath = '//*[@id="vjs_video_3_html5_api"]'
+
+        # Load all the rows in one page before iterating
+        dropdown_xpath = '//*[@class="DropDown_select__4pIg9"]'
+        option_value = '-1'
+
+        try:
+            dropdown_element = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.XPATH, dropdown_xpath))
+            )
+            select = Select(dropdown_element)
+            select.select_by_value(option_value)
+        except:
+            print("There's only one page")
+            
+
+        rows_number = count_rows_table(driver, table_xpath='//*[@id="__next"]/div[2]/div[2]/div[3]/section/div/div/div[3]/table/tbody')
+
+        for i in range(1, rows_number):  # Iterate over all the plays of a particular player
+            line_play = f'//*[@id="__next"]/div[2]/div[2]/div[3]/section/div/div/div[3]/table/tbody/tr[{i}]/td'
+
+            play = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.XPATH, line_play))
+            )
+
+            columns_play = play.find_elements(By.XPATH, line_play)
+            
+            row_data = []
+            for col in columns_play:
+                row_data.append(col.text)
+
+            row_data.insert(1, player_name)
+            
+            play.click()
+
+            # Video display element
+            video_element = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, video_display_xpath))
+            )
+            video_src = video_element.get_attribute('src')
+            row_data.append(video_src) 
+
+            # La fila se agrega al DataFrame
+            labels_df.loc[i - 1] = row_data  
+        
+        # Actualizar el csv con los nuevos datos
+        labels_df.to_csv(df_path, mode='a', index=True, header=False)
+
+        # Cuando se ha guardado, click en la flecha de ir para atrás
+        driver.back()
+        time.sleep(2)
+
+
+    driver.quit()   
 
 
 ###################################################################################################
@@ -318,8 +499,8 @@ def scrape_shots(season: str, play_type: str):
 
 
 if __name__ == '__main__':
-    all_seasons = ["2017-18", "2019-20", "2020-21", "2014-15", "2015-16", 
-                   "2016-17", "2018-19", "2021-22", "2022-23", "2023-24"]
+    all_seasons = ["2019-20", "2020-21", "2014-15", "2015-16", "2016-17", 
+                   "2018-19", "2021-22", "2022-23", "2023-24", "2017-18"]
 
     play_types = ["OREB"]
 
